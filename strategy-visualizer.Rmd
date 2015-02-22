@@ -16,7 +16,14 @@ You can embed Shiny inputs and outputs in your document. Outputs are automatical
 
 ```{r, echo=FALSE}
 source('~/GitHub/option-strategies/option-strategies.r')
-BSM
+sidebarPanel(
+textInput("symbol", "Ticker Symbol: ",value="CAT"),
+selectInput("strategy","Select a strategy:",
+            c("Straddle"="straddle", "Strangle"="strangle","Bull-Bear Spread w Calls"="BBSprWCalls",
+              "Bull-Bear Spread w Puts"="BBSprWPuts","Box Spread"="box","Butterfly w Calls"="ButterflyWCalls",
+              "Butterfly w Puts"="ButterflyWPuts")),
+numericInput("daysLeft", "Days to Expiration", 90, min = 1, max = 500, step = 1)
+)
 ```
 
 
