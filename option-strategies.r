@@ -1,4 +1,4 @@
-fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=100)
+fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=1000)
 {
   #2 packages that are required to run this
   require(quantmod)
@@ -6,7 +6,7 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   
   #pull in stock prices and calculate returns, mean, sd, annual sd
   stock <- getSymbols(symbol,auto.assign=FALSE,warnings=FALSE,verbose=FALSE)
-  sPrice <- st[,6]
+  sPrice <- stock[,6]
   obs <- nrow(sPrice)
   adjPrice <- sPrice[(obs-252):obs,]
   returns <- na.omit(dailyReturn(adjPrice,leading=FALSE))
@@ -43,8 +43,8 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   {
     callPrice <- BSM(callStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$callPrice
     putPrice <- BSM(putStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$putPrice
-    longCall <- pmax(rep(0,trials),priceEstimates-callStrike) -callPrice
-    longPut <- pmax(rep(0,trials),putStrike-priceEstimates) -putPrice
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike) -as.numeric(callPrice)
+    longPut <- pmax(rep(0,trials),putStrike-priceEstimates) -as.numeric(putPrice)
     longPayoff <- longCall + longPut
     shortPayoff <- -longPayoff
     output <- cbind(longPayoff,shortPayoff)
@@ -52,55 +52,55 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   
   if(strategy=="BBSprWCalls")
   {
-    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
-    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
-    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
+    callPrice <- sapply(callStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -as.numeric(callPrice[1])
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -as.numeric(callPrice[2]))
     bullPayoff <- longCall + shortCall
     bearPayoff <- -bullPayoff
     output <- cbind(bullPayoff,bearPayoff)
   }
   if(strategy=="BBSprWPuts")
   {
-    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
-    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2]
-    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1])
+    putPrice <- sapply(putStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -as.numeric(putPrice[2])
+    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -as.numeric(putPrice[1]))
     bearPayoff <- longPut + shortPut
     bullPayoff <- -bearPayoff
     output <- cbind(bearPayoff,bullPayoff)
   }
   if(strategy=="box")
   {
-    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
-    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
-    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
+    callPrice <- sapply(callStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -as.numeric(callPrice[1])
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -as.numeric(callPrice[2]))
     bullPayoff <- longCall + shortCall
     
-    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
-    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2]
-    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1])
+    putPrice <- sapply(putStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -as.numeric(putPrice[2])
+    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -as.numeric(putPrice[1]))
     bearPayoff <- longPut + shortPut
     boxpayoff <- bullPayoff + bearPayoff
     output <- cbind(boxpayoff)
   }
   if(strategy=="ButterflyWCalls")
   {
-    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
-    longCall1 <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
-    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
-    longCall2 <- pmax(rep(0,trials),priceEstimates-callStrike[3]) -callPrice[3]
+    callPrice <- sapply(callStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall1 <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -as.numeric(callPrice[1])
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -as.numeric(callPrice[2]))
+    longCall2 <- pmax(rep(0,trials),priceEstimates-callStrike[3]) -as.numeric(callPrice[1])
     longButterfly <- longCall1 + 2*shortCall + longCall2
     shortButterfly <- -longButterfly
-    output <- cbind(longButterfly,longButterfly)
+    output <- cbind(longButterfly,shortButterfly)
   }
   if(strategy=="ButterflyWPuts")
   {
-    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
-    longPut1 <- pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1]
-    shortPut <- -(pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2])
-    longPut2 <- pmax(rep(0,trials),putStrike[3]-priceEstimates) -putPrice[3]
+    putPrice <- sapply(putStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut1 <- pmax(rep(0,trials),putStrike[1]-priceEstimates) -as.numeric(putPrice[1])
+    shortPut <- -(pmax(rep(0,trials),putStrike[2]-priceEstimates) -as.numeric(putPrice[2]))
+    longPut2 <- pmax(rep(0,trials),putStrike[3]-priceEstimates) -as.numeric(putPrice[1])
     longButterfly <- longPut1 + 2*shortPut + longPut2
     shortButterfly <- -longButterfly
-    output <- cbind(longButterfly,longButterfly)
+    output <- cbind(longButterfly,shortButterfly)
   }
   
   # output the details
