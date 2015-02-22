@@ -1,4 +1,4 @@
-fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=10)
+fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=100)
 {
   #2 packages that are required to run this
   require(quantmod)
@@ -43,12 +43,12 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   {
     callPrice <- BSM(callStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$callPrice
     putPrice <- BSM(putStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$putPrice
-    longCall <- sapply(c(0,priceEstimates-callStrike),max) - callPrice
-    longPut <- sapply(c(0,putStrike-priceEstimates),max) - putPrice
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike) -callPrice
+    longPut <- pmax(rep(0,trials),putStrike-priceEstimates) -putPrice
     longPayoff <- longCall + longPut
     shortPayoff <- -longPayoff
   }
-  list(lastPrice,meanRet,annualVol,DY,priceEstimates,longPayoff)
+  summary(cbind(longPayoff,shortPayoff))
 }
 
 BSM <- function(strike,s0,vol,rfr,tiy,DY)
