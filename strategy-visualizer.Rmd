@@ -17,13 +17,58 @@ You can embed Shiny inputs and outputs in your document. Outputs are automatical
 ```{r, echo=FALSE}
 source('~/GitHub/option-strategies/option-strategies.r')
 sidebarPanel(
-textInput("symbol", "Ticker Symbol: ",value="CAT"),
-selectInput("strategy","Select a strategy:",
-            c("Straddle"="straddle", "Strangle"="strangle","Bull-Bear Spread w Calls"="BBSprWCalls",
-              "Bull-Bear Spread w Puts"="BBSprWPuts","Box Spread"="box","Butterfly w Calls"="ButterflyWCalls",
-              "Butterfly w Puts"="ButterflyWPuts")),
-numericInput("daysLeft", "Days to Expiration", 90, min = 1, max = 500, step = 1)
+  textInput("symbol", "Ticker Symbol: ",value="CAT"),
+  
+  selectInput("strategy","Select a strategy:",
+              c("Straddle"="straddle", "Strangle"="strangle","Bull-Bear Spread w Calls"="BBSprWCalls",
+                "Bull-Bear Spread w Puts"="BBSprWPuts","Box Spread"="box","Butterfly w Calls"="ButterflyWCalls",
+                "Butterfly w Puts"="ButterflyWPuts")),
+  
+  numericInput("daysLeft", "Days to Expiration", 90, min = 1, max = 500, step = 1)
 )
+
+output$ui <- renderUI({
+    if (is.null(input$strategy))
+      return()
+
+    # Depending on input$input_type, we'll generate a different
+    # UI component and send it to the client.
+    switch(input$strategy,
+      "straddle" = sliderInput("dynamic", "Dynamic",
+                             min = 1, max = 20, value = 10),
+      "strangle" = textInput("dynamic", "Dynamic",
+                         value = "starting value"),
+      "box" =  numericInput("dynamic", "Dynamic",
+                                value = 12),
+      "checkbox" = checkboxInput("dynamic", "Dynamic",
+                                 value = TRUE),
+      "checkboxGroup" = checkboxGroupInput("dynamic", "Dynamic",
+        choices = c("Option 1" = "option1",
+                    "Option 2" = "option2"),
+        selected = "option2"
+      ),
+      "radioButtons" = radioButtons("dynamic", "Dynamic",
+        choices = c("Option 1" = "option1",
+                    "Option 2" = "option2"),
+        selected = "option2"
+      ),
+      "selectInput" = selectInput("dynamic", "Dynamic",
+        choices = c("Option 1" = "option1",
+                    "Option 2" = "option2"),
+        selected = "option2"
+      ),
+      "selectInput (multi)" = selectInput("dynamic", "Dynamic",
+        choices = c("Option 1" = "option1",
+                    "Option 2" = "option2"),
+        selected = c("option1", "option2"),
+        multiple = TRUE
+      ),
+      "date" = dateInput("dynamic", "Dynamic"),
+      "daterange" = dateRangeInput("dynamic", "Dynamic")
+    )
+  })
+
+uiOutput("ui")
 ```
 
 
