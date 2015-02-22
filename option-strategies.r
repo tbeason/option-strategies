@@ -104,7 +104,7 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   }
   
   # output the details
-  summary(output)
+  list(payoff=output,forecastedPrices=priceEstimates,historicalPrices=adjPrice)
 }
 
 BSM <- function(strike,s0,vol,rfr,tiy,DY)
