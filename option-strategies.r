@@ -39,7 +39,7 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   #use Black Scholes Merton to price calls and puts
   #ex: sapply(c(100,105,110),FUN=BSM,s0=90,vol=0.25,rfr=0.02,tiy=0.5,DY=0)
   
-  if(strategy=="straddle")
+  if(strategy=="straddle" || strategy=="strangle")
   {
     callPrice <- BSM(callStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$callPrice
     putPrice <- BSM(putStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$putPrice
@@ -47,8 +47,64 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
     longPut <- pmax(rep(0,trials),putStrike-priceEstimates) -putPrice
     longPayoff <- longCall + longPut
     shortPayoff <- -longPayoff
+    output <- cbind(longPayoff,shortPayoff)
   }
-  summary(cbind(longPayoff,shortPayoff))
+  
+  if(strategy=="BBSprWCalls")
+  {
+    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
+    bullPayoff <- longCall + shortCall
+    bearPayoff <- -bullPayoff
+    output <- cbind(bullPayoff,bearPayoff)
+  }
+  if(strategy=="BBSprWPuts")
+  {
+    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2]
+    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1])
+    bearPayoff <- longPut + shortPut
+    bullPayoff <- -bearPayoff
+    output <- cbind(bearPayoff,bullPayoff)
+  }
+  if(strategy=="box")
+  {
+    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
+    bullPayoff <- longCall + shortCall
+    
+    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut <- pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2]
+    shortPut <- -(pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1])
+    bearPayoff <- longPut + shortPut
+    boxpayoff <- bullPayoff + bearPayoff
+    output <- cbind(boxpayoff)
+  }
+  if(strategy=="ButterflyWCalls")
+  {
+    callPrice <- sapply(callStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    longCall1 <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -callPrice[1]
+    shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -callPrice[2])
+    longCall2 <- pmax(rep(0,trials),priceEstimates-callStrike[3]) -callPrice[3]
+    longButterfly <- longCall1 + 2*shortCall + longCall2
+    shortButterfly <- -longButterfly
+    output <- cbind(longButterfly,longButterfly)
+  }
+  if(strategy=="ButterflyWPuts")
+  {
+    putPrice <- sapply(putStrikes,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
+    longPut1 <- pmax(rep(0,trials),putStrike[1]-priceEstimates) -putPrice[1]
+    shortPut <- -(pmax(rep(0,trials),putStrike[2]-priceEstimates) -putPrice[2])
+    longPut2 <- pmax(rep(0,trials),putStrike[3]-priceEstimates) -putPrice[3]
+    longButterfly <- longPut1 + 2*shortPut + longPut2
+    shortButterfly <- -longButterfly
+    output <- cbind(longButterfly,longButterfly)
+  }
+  
+  # output the details
+  summary(output)
 }
 
 BSM <- function(strike,s0,vol,rfr,tiy,DY)
