@@ -13,7 +13,7 @@ This program was completed for the Advanced Derivatives (FIN637) class at Bradle
 2. Choose an option strategy. Refer to http://www.investopedia.com if you are unsure what some of these are. Both the "long" and "short" strategies will be calculated if available.
 3. Fill out the remaining inputs.
 ```{r, echo=FALSE}
-source('~/GitHub/option-strategies/option-strategies.r')
+source('option-strategies.r')
 fluidRow(
   column(4,
        wellPanel(
@@ -113,3 +113,4 @@ renderPlot({
 ```
 
 
+Source available at https://github.com/tbeason/option-strategies.
