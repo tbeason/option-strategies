@@ -1,4 +1,4 @@
-fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=1000)
+optionStrat <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=1000)
 {
   #2 packages that are required to run this
   require(quantmod)
@@ -41,8 +41,8 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
   
   if(strategy=="straddle" || strategy=="strangle")
   {
-    callPrice <- BSM(callStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$callPrice
-    putPrice <- BSM(putStrike,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)$putPrice
+    callPrice <- sapply(callStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
+    putPrice <- sapply(putStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
     longCall <- pmax(rep(0,trials),priceEstimates-callStrike) -as.numeric(callPrice)
     longPut <- pmax(rep(0,trials),putStrike-priceEstimates) -as.numeric(putPrice)
     longPayoff <- longCall + longPut
@@ -87,7 +87,7 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
     callPrice <- sapply(callStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[1,]
     longCall1 <- pmax(rep(0,trials),priceEstimates-callStrike[1]) -as.numeric(callPrice[1])
     shortCall <- -(pmax(rep(0,trials),priceEstimates-callStrike[2]) -as.numeric(callPrice[2]))
-    longCall2 <- pmax(rep(0,trials),priceEstimates-callStrike[3]) -as.numeric(callPrice[1])
+    longCall2 <- pmax(rep(0,trials),priceEstimates-callStrike[3]) -as.numeric(callPrice[3])
     longButterfly <- longCall1 + 2*shortCall + longCall2
     shortButterfly <- -longButterfly
     output <- cbind(longButterfly,shortButterfly)
@@ -97,7 +97,7 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
     putPrice <- sapply(putStrike,FUN=BSM,s0=lastPrice,vol=annualVol,rfr=rfr,tiy=TTM,DY=DY)[2,]
     longPut1 <- pmax(rep(0,trials),putStrike[1]-priceEstimates) -as.numeric(putPrice[1])
     shortPut <- -(pmax(rep(0,trials),putStrike[2]-priceEstimates) -as.numeric(putPrice[2]))
-    longPut2 <- pmax(rep(0,trials),putStrike[3]-priceEstimates) -as.numeric(putPrice[1])
+    longPut2 <- pmax(rep(0,trials),putStrike[3]-priceEstimates) -as.numeric(putPrice[3])
     longButterfly <- longPut1 + 2*shortPut + longPut2
     shortButterfly <- -longButterfly
     output <- cbind(longButterfly,shortButterfly)
@@ -109,6 +109,8 @@ fun <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike
 
 BSM <- function(strike,s0,vol,rfr,tiy,DY)
 {
+  s0 <- as.numeric(s0)
+  strike <- as.numeric(strike)
   #Merton 
   d1M <- (log(s0/strike)+(rfr-DY+0.5*(vol*vol))*tiy)/(vol*sqrt(tiy))
   d2M <- d1M-(vol*sqrt(tiy))

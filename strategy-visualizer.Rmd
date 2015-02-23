@@ -1,19 +1,17 @@
 ---
 title: "Option Strategies"
 author: "Tyler Beason & Jason Sippel"
-date: "Sunday, February 22, 2015"
+date: "Last updated: Sunday, February 22, 2015"
 output: html_document
 runtime: shiny
 ---
 
-This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
+This program was completed for the Advanced Derivatives (FIN637) class at Bradley University. It allows you to estimate the payoffs from 7 option strategies on the stock of your choice. Future stock prices are estimated by geometric Brownian motion, using the trailing twelve-month mean and volatility as estimates of future mean and volatility. The option prices are then determined using Black Scholes Merton. If the stock pays dividends, those are taken into account.
 
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
-## Inputs and Outputs
-
-You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
-
+## To Use:
+1. Put in the symbol of the stock you'd like to simulate. Data is pulled from Yahoo Finance, so if the symbol wouldn't be found there, you will get an error.
+2. Choose an option strategy. Refer to http://www.investopedia.com if you are unsure what some of these are. Both the "long" and "short" strategies will be calculated if available.
+3. Fill out the remaining inputs.
 ```{r, echo=FALSE}
 source('~/GitHub/option-strategies/option-strategies.r')
 fluidRow(
@@ -31,9 +29,7 @@ fluidRow(
             )
        ),
   column(8,
-         #wellPanel(
-           uiOutput("ui")
-           #)
+         uiOutput("ui")
         )
 )
 output$ui <- renderUI({
@@ -43,10 +39,10 @@ output$ui <- renderUI({
     # Depending on input$input_type, we'll generate a different
     # UI component and send it to the client.
     switch(input$strategy,
-      "straddle" = list(column(6,wellPanel(h4("Call Strikes"),numericInput("call1", "Call Number 1:", 90, min = 1, step = 1))),
-                    column(6,wellPanel(h4("Put Strikes"),numericInput("put1", "Put Number 1:", 90, min = 1, step = 1)))),
-      "strangle" = list(column(6,wellPanel(h4("Call Strikes"),numericInput("call1", "Call Number 1:", 90, min = 1, step = 1))),
-                    column(6,wellPanel(h4("Put Strikes"),numericInput("put1", "Put Number 1:", 80, min = 1, step = 1)))),
+      "straddle" = list(column(6,wellPanel(h4("Call Strike"),numericInput("call1", "", 90, min = 1, step = 1))),
+                    column(6,wellPanel(h4("Put Strike"),numericInput("put1", "", 90, min = 1, step = 1)))),
+      "strangle" = list(column(6,wellPanel(h4("Call Strike"),numericInput("call1", "", 90, min = 1, step = 1))),
+                    column(6,wellPanel(h4("Put Strike"),numericInput("put1", "", 80, min = 1, step = 1)))),
       "BBSprWCalls" = list(column(6,wellPanel(h4("Call Strikes"),
                                               numericInput("call1", "Lower Call:", 90, min = 1, step = 1),
                                               numericInput("call2", "Higher Call:", 100, min = 1, step = 1)))),
@@ -54,39 +50,66 @@ output$ui <- renderUI({
       "BBSprWPuts" =  list(column(6,wellPanel(h4("Put Strikes"),
                                               numericInput("put1", "Lower Put:", 90, min = 1, step = 1),
                                               numericInput("put2", "Higher Put:", 100, min = 1, step = 1)))),
-      "checkbox" = checkboxInput("dynamic", "Dynamic",
-                                 value = TRUE),
-      "checkboxGroup" = checkboxGroupInput("dynamic", "Dynamic",
-        choices = c("Option 1" = "option1",
-                    "Option 2" = "option2"),
-        selected = "option2"
-      ),
-      "radioButtons" = radioButtons("dynamic", "Dynamic",
-        choices = c("Option 1" = "option1",
-                    "Option 2" = "option2"),
-        selected = "option2"
-      ),
-      "selectInput" = selectInput("dynamic", "Dynamic",
-        choices = c("Option 1" = "option1",
-                    "Option 2" = "option2"),
-        selected = "option2"
-      ),
-      "selectInput (multi)" = selectInput("dynamic", "Dynamic",
-        choices = c("Option 1" = "option1",
-                    "Option 2" = "option2"),
-        selected = c("option1", "option2"),
-        multiple = TRUE
-      ),
-      "date" = dateInput("dynamic", "Dynamic"),
-      "daterange" = dateRangeInput("dynamic", "Dynamic")
+      "box" = list(column(6,wellPanel(h4("Call Strikes"),
+                                              numericInput("call1", "Lower Call:", 90, min = 1, step = 1),
+                                              numericInput("call2", "Higher Call:", 100, min = 1, step = 1))),
+                           column(6,wellPanel(h4("Put Strikes"),
+                                              numericInput("put1", "Lower Put:", 90, min = 1, step = 1),
+                                              numericInput("put2", "Higher Put:", 100, min = 1, step = 1)))
+                           ),
+      
+      
+      "ButterflyWCalls" = list(column(6,wellPanel(h4("Call Strikes"),
+                                              numericInput("call1", "Lower Call:", 90, min = 1, step = 1),
+                                              numericInput("call2", "Middle Call:", 95, min = 1, step = 1),
+                                              numericInput("call3", "Higher Call:", 100, min = 1, step = 1)))),
+      "ButterflyWPuts" =  list(column(6,wellPanel(h4("Put Strikes"),
+                                              numericInput("put1", "Lower Put:", 90, min = 1, step = 1),
+                                              numericInput("put2", "Middle Put:", 95, min = 1, step = 1),
+                                              numericInput("put3", "Higher Put:", 100, min = 1, step = 1)))),
     )
   })
-# wellPanel(
-#   uiOutput("ui")
-# )
 ```
 
+After 1,000 simulations of the outcome...
 
+```{r,echo=FALSE,message=FALSE}
 
+callK <- reactive({
+        y <- switch(input$strategy,
+         "straddle"=input$call1,
+         "strangle"=input$call1,
+         "BBSprWCalls"=c(input$call1,input$call2),
+         "box"=c(input$call1,input$call2),
+         "ButterflyWCalls"=c(input$call1,input$call2,input$call3)
+         )
+        y
+})
+putK <- reactive({switch(input$strategy,
+         "straddle"=input$put1,
+         "strangle"=input$put1,
+         "BBSprWPuts"=c(input$put1,input$put2),
+         "box"=c(input$put1,input$put2),
+         "ButterflyWPuts"=c(input$put1,input$put2,input$put3)
+         )
+})
+
+outcome <- reactive({optionStrat(symbol=input$symbol,daysLeft=input$daysLeft,rfr=input$rfr,
+                                callStrike=callK(),putStrike=putK(),
+                                strategy=input$strategy,trials=1000)})
+renderPrint({
+  data <- outcome()
+  summary(data$payoff)
+})
+
+```
+
+For reference, here is what the last year of historical prices of that stock look like.
+```{r,echo=FALSE}
+renderPlot({
+  data <- outcome()
+  chartSeries(data$historicalPrices,theme=chartTheme("white"),name=input$symbol)
+})
+```
 
 
