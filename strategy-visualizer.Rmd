@@ -39,8 +39,8 @@ output$ui <- renderUI({
     # Depending on input$input_type, we'll generate a different
     # UI component and send it to the client.
     switch(input$strategy,
-      "straddle" = list(column(6,wellPanel(h4("Call Strike"),numericInput("call1", "", 90, min = 1, step = 1))),
-                    column(6,wellPanel(h4("Put Strike"),numericInput("put1", "", 90, min = 1, step = 1)))),
+      "straddle" = list(column(6,wellPanel(h4("Straddle Strike"),numericInput("strike", "", 90, min = 1, step = 1)))
+                    ),
       "strangle" = list(column(6,wellPanel(h4("Call Strike"),numericInput("call1", "", 90, min = 1, step = 1))),
                     column(6,wellPanel(h4("Put Strike"),numericInput("put1", "", 80, min = 1, step = 1)))),
       "BBSprWCalls" = list(column(6,wellPanel(h4("Call Strikes"),
@@ -77,7 +77,7 @@ After 1,000 simulations of the outcome...
 
 callK <- reactive({
         y <- switch(input$strategy,
-         "straddle"=input$call1,
+         "straddle"=input$strike,
          "strangle"=input$call1,
          "BBSprWCalls"=c(input$call1,input$call2),
          "box"=c(input$call1,input$call2),
@@ -86,7 +86,7 @@ callK <- reactive({
         y
 })
 putK <- reactive({switch(input$strategy,
-         "straddle"=input$put1,
+         "straddle"=input$strike,
          "strangle"=input$put1,
          "BBSprWPuts"=c(input$put1,input$put2),
          "box"=c(input$put1,input$put2),
@@ -104,12 +104,26 @@ renderPrint({
 
 ```
 
+The payoff function and distribution of payoff looks like:
+```{r,echo=FALSE}
+renderPlot({
+  data <- outcome()
+  plot(data$forecastedPrices,data$payoff[,1],xlab="Estimated stock price at expiration", ylab="Estimated payoff of strategy",main="Payoff")
+})
+renderPlot({
+  data <- outcome()
+  hist(data$payoff[,1],xlab="Payoff",main="Distribution of Payoff")
+  })
+```
+
+
 For reference, here is what the last year of historical prices of that stock look like.
 ```{r,echo=FALSE}
 renderPlot({
   data <- outcome()
   chartSeries(data$historicalPrices,theme=chartTheme("white"),name=input$symbol)
 })
+
 ```
 
 
