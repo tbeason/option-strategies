@@ -1,8 +1,7 @@
 optionStrat <- function(symbol = "CAT", daysLeft=90, rfr=0.02, callStrike=100, putStrike=100, strategy="straddle", trials=1000)
 {
-  #2 packages that are required to run this
+  #packages that are required to run this
   require(quantmod)
-  require(ggplot2)
   
   #pull in stock prices and calculate returns, mean, sd, annual sd
   stock <- getSymbols(symbol,auto.assign=FALSE,warnings=FALSE,verbose=FALSE)
